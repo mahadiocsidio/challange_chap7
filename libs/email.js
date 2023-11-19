@@ -9,7 +9,7 @@ module.exports={
 
         <p style="margin-bottom: 20px;">You have requested to reset your password. Click the link below to reset it:</p>
 
-        <a href="{{ resetLink }}" target="_blank" style="color: #4caf50; text-decoration: none; font-weight: bold;">Reset Password</a>
+        <a href=${link}" target="_blank" style="color: #4caf50; text-decoration: none; font-weight: bold;">Reset Password</a>
 
         <p style="margin-bottom: 20px;">If you did not request a password reset, please ignore this email.</p>
 
