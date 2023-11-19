@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const Sentry = require("@sentry/node");
 const pageRouter = require("./routes/page.routes");
 const { resetDb } = require("./controllers/auth.controllers");
+const {notFoundHandler,internalServerErrorHandler} = require('./middlewares/middlewares')
 // const userRouter = require("./routers/user.routes");
 const { PORT, SENTRY_DSN } = process.env;
 
@@ -35,11 +36,11 @@ app.use(Sentry.Handlers.tracingHandler());
 //   next();
 // });
 app.use("/", pageRouter);
-app.use('/resetdb', resetDb)
+app.use('/resetdb', resetDb);
 // app.use("/api", userRouter);
 
 app.use(Sentry.Handlers.errorHandler());
-// app.use(notFoundHandler);
-// app.use(internalServerErrorHandler);
+app.use(notFoundHandler);
+app.use(internalServerErrorHandler);
 
 app.listen(PORT, () => console.log(`Listening at http://localhost:${PORT}`));

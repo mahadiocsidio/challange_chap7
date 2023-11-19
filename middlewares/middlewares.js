@@ -19,5 +19,5 @@ const internalServerErrorHandler = (err, req, res, next) => {
 
 module.exports = {
   notFoundHandler,
-  internalServerErrorHandler,
+  internalServerErrorHandler
 };

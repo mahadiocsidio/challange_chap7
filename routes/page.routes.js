@@ -1,6 +1,6 @@
 const {Router} = require('express')
 const router = Router()
-const{register,login}= require('../controllers/auth.controllers')
+const{register,login,forgot_password,reset_password}= require('../controllers/auth.controllers')
 const prisma = require('../libs/prisma')
 const {verivyToken} = require('../libs/verifyToken')
 
@@ -18,6 +18,19 @@ router.get('/login', (req,res)=>{
     res.render('login')
 })
 router.post('/api/login', login);
+
+router.get('/forgot-password', (req,res)=>{
+    res.render('forgotPass')
+})
+
+router.post('/api/forgot-password', forgot_password);
+
+router.get('/reset-password', (req,res)=>{
+    res.render('resetPass')
+})
+
+router.post('/api/reset-password', reset_password);
+
 
 router.get('/notifications',verivyToken, async (req, res) => {
     try {

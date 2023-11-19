@@ -125,7 +125,7 @@ module.exports = {
             next(error);
           }
     },
-    resetPassword: async (io, req, res, next) => {
+    reset_password: async (io, req, res, next) => {
         try {
           const { token } = req.query;
       
