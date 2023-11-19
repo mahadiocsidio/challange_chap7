@@ -1,6 +1,8 @@
 const {Router} = require('express')
 const router = Router()
-const{register,login,authenticate,resetDb}= require('../controllers/auth.controllers')
+const{register,login}= require('../controllers/auth.controllers')
+const prisma = require('../libs/prisma')
+const {verivyToken} = require('../libs/verifyToken')
 
 router.get('/', (req,res)=>{
     res.render('register')
@@ -17,7 +19,19 @@ router.get('/login', (req,res)=>{
 })
 router.post('/api/login', login);
 
-router.get('/notifications',(req, res)=>{
-    res.render('notifications')
+router.get('/notifications',verivyToken, async (req, res) => {
+    try {
+      const notifications = await prisma.notifications.findMany({
+        where: {
+          userId: req.user.id,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+      res.render('notifications', { ...req.user, notifications });
+    } catch (error) {
+        res.redirect('/?message=Email not found&status=false');
+    }
 })
 module.exports = router

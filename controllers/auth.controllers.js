@@ -1,8 +1,8 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-
+const prisma = require('../libs/prisma');
+const { sendEmail } = require('../libs/nodemailer');
+const email = require('../libs/email');
 module.exports = {
   register: async (req,res,next)=>{
     try {
@@ -38,9 +38,9 @@ module.exports = {
         const { email, password } = req.body;
         const user = await prisma.users.findUnique({
             where: {
-                email
-                },
-            });
+                email,
+            },
+        });
 
         if (!user) return res.redirect('/errorPage')
 
@@ -48,7 +48,14 @@ module.exports = {
 
         if (!isMatch) return res.redirect('/errorPage')
 
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
+        const token = jwt.sign(
+            {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+            },
+            process.env.JWT_SECRET
+          );
 
         res.cookie('token', token, {
             httpOnly: true,
@@ -60,17 +67,7 @@ module.exports = {
         next(error)
     }
   },
-    authenticate: async (req,res,next)=>{
-        const token = req.cookies.token;
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            req.user = decoded;
-            next();
-        } catch (error) {
-            res.redirect('/errorPage');
-        }
-    },
-    resetDb: async (req,res) => {
+  resetDb: async (req,res) => {
         try {
           await prisma.notifications.deleteMany()
           console.log('Deleted records in category table')
@@ -90,6 +87,84 @@ module.exports = {
           process.exit(1)
         } finally {
           await prisma.$disconnect()
+        }
+    },
+    forgot_password:async(req,res)=>{
+        try {
+            const { email } = req.body;
+        
+            const user = await prisma.users.findUnique({
+              where: {
+                email,
+              },
+            });
+        
+            if (!user) {
+              res.redirect('/forgot-password?message=Email not found&status=false');
+            } else {
+              const token = jwt.sign(
+                {
+                  id: user.id,
+                  name: user.name,
+                  email: user.email,
+                },
+                process.env.JWT_SECRET,
+                { expiresIn: '1h' }
+              );
+        
+              const link = `http://localhost:3000/reset-password/?token=${token}`;
+              await sendEmail({
+                to: email,
+                subject: 'Reset Password',
+                html: email(link),
+              });
+        
+              res.redirect(`/forgot-password?message=Reset password link telah dikirim ke emailmu&status=true`);
+            }
+          } catch (error) {
+            next(error);
+          }
+    },
+    resetPassword: async (io, req, res, next) => {
+        try {
+          const { token } = req.query;
+      
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+          if (!decoded) {
+            res.redirect('/?message=Token invalid&status=false');
+          }
+      
+          const { password, confirm_password } = req.body;
+      
+          if (password !== confirm_password) {
+            res.redirect('/?message=Password dan Confirm Password tidak sama&status=false');
+          }
+      
+          await prisma.users.update({
+            where: {
+              email: decoded.email,
+            },
+            data: {
+              password: await bcrypt.hash(password, 10),
+            },
+          });
+          io.emit(`userId-${decoded.id}-notification`, {
+            message: `Ganti password berhasil!`,
+            category: 'info',
+          });
+      
+          await prisma.notifications.create({
+            data: {
+              userId: decoded.id,
+              title: 'Reset Password',
+              body: `Ganti password berhasil!`,
+            },
+          });
+      
+          res.redirect('/?message=Reset password berhasil&status=true');
+        } catch (error) {
+          next(error);
         }
     }
 };

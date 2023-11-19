@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const cookieParser = require('cookie-parser');
 const Sentry = require("@sentry/node");
 const pageRouter = require("./routes/page.routes");
 const { resetDb } = require("./controllers/auth.controllers");
@@ -7,7 +8,7 @@ const { resetDb } = require("./controllers/auth.controllers");
 const { PORT, SENTRY_DSN } = process.env;
 
 const app = express();
-
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
