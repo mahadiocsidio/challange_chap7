@@ -150,15 +150,15 @@ module.exports = {
             },
           });
           io.emit(`userId-${decoded.id}-notification`, {
-            message: `Ganti password berhasil!`,
+            message: `Successfully change password!`,
             category: 'info',
           });
       
           await prisma.notifications.create({
             data: {
               userId: decoded.id,
-              title: 'Reset Password',
-              body: `Ganti password berhasil!`,
+              title: 'Password Changed',
+              body: `Successfully change password!`,
             },
           });
       
