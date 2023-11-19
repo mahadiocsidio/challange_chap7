@@ -1,8 +1,8 @@
 require("dotenv").config();
-
 const express = require("express");
 const Sentry = require("@sentry/node");
 const pageRouter = require("./routes/page.routes");
+const { resetDb } = require("./controllers/auth.controllers");
 // const userRouter = require("./routers/user.routes");
 const { PORT, SENTRY_DSN } = process.env;
 
@@ -33,8 +33,8 @@ app.use(Sentry.Handlers.tracingHandler());
 //   req.io = io;
 //   next();
 // });
-
 app.use("/", pageRouter);
+app.use('/resetdb', resetDb)
 // app.use("/api", userRouter);
 
 app.use(Sentry.Handlers.errorHandler());

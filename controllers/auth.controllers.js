@@ -9,7 +9,9 @@ module.exports = {
         const { name, email, password, confirmPassword} = req.body;
 
         //check if password and confirmpassword is match
-        if (password !== confirmPassword) return alert('Password not match')
+        if (password !== confirmPassword){
+            res.redirect('/errorPage')
+        }
         const hash = await bcrypt.hash(password, 10);
         const user = await prisma.users.create({
             data: {
@@ -33,43 +35,61 @@ module.exports = {
   },
   login: async (req,res,next)=>{
     try {
-        // const { email, password } = req.body;
-        // const user = await prisma.users.findUnique({
-        //     where: {
-        //     email,
-        //     },
-        // });
-        // if (!user) return alert('User not found')
-        // const isMatch = await bcrypt.compare(password, user.password);
-        // if (!isMatch) return alert('Wrong password')
-        // const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
-        // res.cookie('token', token, {
-        //     httpOnly: true,
-        //     maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-        // });
-        res.redirect(`/notifications`)
-    } catch (error) {
-    next(error)
-    }
-},
-    authenticate: async (req,res,next)=>{
-        try {
-            const { token } = req.cookies;
-            if (!token) return res.status(401).json({ message: 'Please login' });
-            const { id } = jwt.verify(token, process.env.JWT_SECRET);
-            const user = await prisma.users.findUnique({
-                where: {
-                    id,
-                },
-                include: {
-                    notifications: true,
+        const { email, password } = req.body;
+        const user = await prisma.users.findUnique({
+            where: {
+                email
                 },
             });
-            if (!user) return res.status(401).json({ message: 'Please login' });
-            req.user = user;
+
+        if (!user) return res.redirect('/errorPage')
+
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) return res.redirect('/errorPage')
+
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
+
+        res.cookie('token', token, {
+            httpOnly: true,
+            maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+        });
+
+        res.redirect(`/notifications`)
+    } catch (error) {
+        next(error)
+    }
+  },
+    authenticate: async (req,res,next)=>{
+        const token = req.cookies.token;
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = decoded;
             next();
         } catch (error) {
-            next(error)
+            res.redirect('/errorPage');
+        }
+    },
+    resetDb: async (req,res) => {
+        try {
+          await prisma.notifications.deleteMany()
+          console.log('Deleted records in category table')
+      
+      
+          await prisma.users.deleteMany()
+          console.log('Deleted records in product table')
+      
+      
+          await prisma.$queryRaw`ALTER TABLE Users AUTO_INCREMENT = 1`
+          console.log('reset product auto increment to 1')
+      
+          await prisma.$queryRaw`ALTER TABLE Notifications AUTO_INCREMENT = 1`
+          console.log('reset category auto increment to 1')
+        } catch (e) {
+          console.error(e)
+          process.exit(1)
+        } finally {
+          await prisma.$disconnect()
         }
     }
 };

@@ -1,10 +1,15 @@
 const {Router} = require('express')
 const router = Router()
-const{register,login,authenticate}= require('../controllers/auth.controllers')
+const{register,login,authenticate,resetDb}= require('../controllers/auth.controllers')
 
 router.get('/', (req,res)=>{
     res.render('register')
 })
+
+router.get('/errorPage', (req,res)=>{
+    res.render('errorPage')
+})
+
 router.post('/api/register', register);
 
 router.get('/login', (req,res)=>{
